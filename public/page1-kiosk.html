@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CMC Pointage - Kiosk Public</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        emeraldAccent: '#10b981',
+                    },
+                    fontFamily: {
+                        title: ['"Space Grotesk"', 'sans-serif'],
+                        body: ['Inter', 'sans-serif'],
+                    },
+                },
+            },
+        };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-950 text-gray-100 font-body min-h-screen">
+    <div class="min-h-screen flex">
+        <aside class="hidden lg:flex w-72 bg-gray-900 border-r border-gray-800 p-6 flex-col">
+            <div class="mb-8">
+                <p class="font-title text-2xl text-white">CMC Pointage</p>
+                <p class="text-sm text-gray-400 mt-1">Gestion Résidence Universitaire</p>
+            </div>
+            <nav class="space-y-2 text-sm">
+                <a href="#" class="block px-4 py-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300">1. Kiosk / Pointage</a>
+                <a href="#" class="block px-4 py-3 rounded-xl bg-gray-800/60 text-gray-400">2. Dashboard</a>
+                <a href="#" class="block px-4 py-3 rounded-xl bg-gray-800/60 text-gray-400">3. Étudiants</a>
+                <a href="#" class="block px-4 py-3 rounded-xl bg-gray-800/60 text-gray-400">4. Appel 22h</a>
+                <a href="#" class="block px-4 py-3 rounded-xl bg-gray-800/60 text-gray-400">5. Demandes</a>
+                <a href="#" class="block px-4 py-3 rounded-xl bg-gray-800/60 text-gray-400">6. Sanctions</a>
+                <a href="#" class="block px-4 py-3 rounded-xl bg-gray-800/60 text-gray-400">7. Rapports</a>
+                <a href="#" class="block px-4 py-3 rounded-xl bg-gray-800/60 text-gray-400">8. Infrastructures</a>
+                <a href="#" class="block px-4 py-3 rounded-xl bg-gray-800/60 text-gray-400">9. Notifications</a>
+            </nav>
+        </aside>
+
+        <main class="flex-1 p-4 md:p-8">
+            <header class="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between mb-8">
+                <div>
+                    <h1 class="font-title text-2xl md:text-3xl text-white">Kiosk Public / Pointage</h1>
+                    <p class="text-gray-400 mt-1">Checkpoint sécurité - saisie matricule / scan QR simulé</p>
+                </div>
+                <div class="rounded-2xl border border-gray-800 bg-gray-900 px-5 py-3">
+                    <p class="text-xs text-gray-400 uppercase tracking-wider">Heure Casablanca</p>
+                    <p id="clock" class="font-title text-xl text-emerald-400 mt-1">--:--:--</p>
+                </div>
+            </header>
+
+            <section class="grid xl:grid-cols-3 gap-6">
+                <div class="xl:col-span-2 rounded-3xl border border-gray-800 bg-gray-900 p-6 md:p-8">
+                    <h2 class="font-title text-xl mb-2">Scanner Étudiant</h2>
+                    <p class="text-gray-400 text-sm mb-6">Interface tactile : tapez le matricule ou simulez un scan QR.</p>
+
+                    <div class="space-y-4">
+                        <label for="studentInput" class="block text-sm text-gray-300">Matricule / QR code</label>
+                        <input
+                            id="studentInput"
+                            type="text"
+                            placeholder="Ex: ST2024001"
+                            class="w-full h-16 text-xl rounded-2xl border border-gray-700 bg-gray-950 px-5 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        />
+
+                        <div class="grid sm:grid-cols-2 gap-4 pt-2">
+                            <button
+                                id="submitMovementBtn"
+                                class="h-16 rounded-2xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.99] transition text-gray-950 font-semibold text-lg"
+                            >
+                                Valider Entrée / Sortie
+                            </button>
+                            <button
+                                id="simulateQrBtn"
+                                class="h-16 rounded-2xl bg-gray-800 hover:bg-gray-700 active:scale-[0.99] transition border border-gray-700 text-gray-100 font-semibold text-lg"
+                            >
+                                Simuler Scan QR
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="feedbackCard" class="hidden mt-6 rounded-2xl p-5 border"></div>
+                </div>
+
+                <div class="rounded-3xl border border-gray-800 bg-gray-900 p-6">
+                    <h3 class="font-title text-lg mb-4">Derniers mouvements (5)</h3>
+                    <ul id="recentMovements" class="space-y-3"></ul>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'cmcPointageDataStoreV1';
+
+        function createInitialDataStore() {
+            return {
+                pavilions: [
+                    { id: 'PAV-A', name: 'Pavilion A', capacity: 50, floors: 3, status: 'Active' },
+                    { id: 'PAV-B', name: 'Pavilion B', capacity: 40, floors: 2, status: 'Active' },
+                    { id: 'PAV-C', name: 'Pavilion C', capacity: 30, floors: 2, status: 'Maintenance' },
+                    { id: 'PAV-D', name: 'Pavilion D', capacity: 60, floors: 4, status: 'Active' },
+                ],
+                students: [
+                    { id: 'ST-1', firstName: 'Youssef', lastName: 'Alaoui', email: 'youssef.alaoui@cmc.ma', phone: '0601001001', studentId: 'ST2024001', pavilionId: 'PAV-A', roomNumber: 'A-101', status: 'Active', photoInitial: 'YA' },
+                    { id: 'ST-2', firstName: 'Salma', lastName: 'Bennani', email: 'salma.bennani@cmc.ma', phone: '0601001002', studentId: 'ST2024002', pavilionId: 'PAV-A', roomNumber: 'A-108', status: 'Active', photoInitial: 'SB' },
+                    { id: 'ST-3', firstName: 'Ilyas', lastName: 'Mouline', email: 'ilyas.mouline@cmc.ma', phone: '0601001003', studentId: 'ST2024003', pavilionId: 'PAV-B', roomNumber: 'B-204', status: 'Absent', photoInitial: 'IM' },
+                    { id: 'ST-4', firstName: 'Nour', lastName: 'Idrissi', email: 'nour.idrissi@cmc.ma', phone: '0601001004', studentId: 'ST2024004', pavilionId: 'PAV-B', roomNumber: 'B-111', status: 'Active', photoInitial: 'NI' },
+                    { id: 'ST-5', firstName: 'Hamza', lastName: 'Rami', email: 'hamza.rami@cmc.ma', phone: '0601001005', studentId: 'ST2024005', pavilionId: 'PAV-C', roomNumber: 'C-007', status: 'Suspended', photoInitial: 'HR' },
+                    { id: 'ST-6', firstName: 'Aya', lastName: 'Tazi', email: 'aya.tazi@cmc.ma', phone: '0601001006', studentId: 'ST2024006', pavilionId: 'PAV-D', roomNumber: 'D-302', status: 'Active', photoInitial: 'AT' },
+                    { id: 'ST-7', firstName: 'Omar', lastName: 'Lahlou', email: 'omar.lahlou@cmc.ma', phone: '0601001007', studentId: 'ST2024007', pavilionId: 'PAV-D', roomNumber: 'D-118', status: 'Active', photoInitial: 'OL' },
+                    { id: 'ST-8', firstName: 'Meriem', lastName: 'Saidi', email: 'meriem.saidi@cmc.ma', phone: '0601001008', studentId: 'ST2024008', pavilionId: 'PAV-A', roomNumber: 'A-205', status: 'Absent', photoInitial: 'MS' },
+                    { id: 'ST-9', firstName: 'Rachid', lastName: 'Kettani', email: 'rachid.kettani@cmc.ma', phone: '0601001009', studentId: 'ST2024009', pavilionId: 'PAV-B', roomNumber: 'B-019', status: 'Active', photoInitial: 'RK' },
+                    { id: 'ST-10', firstName: 'Lina', lastName: 'Ouahbi', email: 'lina.ouahbi@cmc.ma', phone: '0601001010', studentId: 'ST2024010', pavilionId: 'PAV-D', roomNumber: 'D-401', status: 'Active', photoInitial: 'LO' },
+                ],
+                movements: [
+                    { id: 'MV-1', studentId: 'ST2024001', type: 'entry', timestamp: new Date(Date.now() - 1000 * 60 * 240).toISOString(), status: 'approved', approvedBy: 'Security Officer' },
+                    { id: 'MV-2', studentId: 'ST2024002', type: 'entry', timestamp: new Date(Date.now() - 1000 * 60 * 210).toISOString(), status: 'approved', approvedBy: 'Security Officer' },
+                    { id: 'MV-3', studentId: 'ST2024003', type: 'exit', timestamp: new Date(Date.now() - 1000 * 60 * 160).toISOString(), status: 'pending', approvedBy: null },
+                    { id: 'MV-4', studentId: 'ST2024004', type: 'entry', timestamp: new Date(Date.now() - 1000 * 60 * 125).toISOString(), status: 'approved', approvedBy: 'Security Officer' },
+                    { id: 'MV-5', studentId: 'ST2024006', type: 'entry', timestamp: new Date(Date.now() - 1000 * 60 * 95).toISOString(), status: 'approved', approvedBy: 'Security Officer' },
+                    { id: 'MV-6', studentId: 'ST2024001', type: 'exit', timestamp: new Date(Date.now() - 1000 * 60 * 70).toISOString(), status: 'pending', approvedBy: null },
+                    { id: 'MV-7', studentId: 'ST2024007', type: 'entry', timestamp: new Date(Date.now() - 1000 * 60 * 55).toISOString(), status: 'approved', approvedBy: 'Security Officer' },
+                    { id: 'MV-8', studentId: 'ST2024008', type: 'exit', timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(), status: 'pending', approvedBy: null },
+                ],
+                presences: [
+                    { studentId: 'ST2024001', date: new Date().toISOString().slice(0, 10), isPresent: true, absenceReason: null, verifiedBy: 'Security Officer', verifiedAt: null },
+                    { studentId: 'ST2024002', date: new Date().toISOString().slice(0, 10), isPresent: true, absenceReason: null, verifiedBy: 'Security Officer', verifiedAt: null },
+                    { studentId: 'ST2024003', date: new Date().toISOString().slice(0, 10), isPresent: false, absenceReason: 'Authorized exit', verifiedBy: 'Security Officer', verifiedAt: null },
+                    { studentId: 'ST2024004', date: new Date().toISOString().slice(0, 10), isPresent: true, absenceReason: null, verifiedBy: 'Security Officer', verifiedAt: null },
+                    { studentId: 'ST2024005', date: new Date().toISOString().slice(0, 10), isPresent: false, absenceReason: 'Unjustified', verifiedBy: 'Security Officer', verifiedAt: null },
+                    { studentId: 'ST2024006', date: new Date().toISOString().slice(0, 10), isPresent: true, absenceReason: null, verifiedBy: 'Security Officer', verifiedAt: null },
+                    { studentId: 'ST2024007', date: new Date().toISOString().slice(0, 10), isPresent: true, absenceReason: null, verifiedBy: 'Security Officer', verifiedAt: null },
+                    { studentId: 'ST2024008', date: new Date().toISOString().slice(0, 10), isPresent: false, absenceReason: 'Sick', verifiedBy: 'Security Officer', verifiedAt: null },
+                    { studentId: 'ST2024009', date: new Date().toISOString().slice(0, 10), isPresent: true, absenceReason: null, verifiedBy: 'Security Officer', verifiedAt: null },
+                    { studentId: 'ST2024010', date: new Date().toISOString().slice(0, 10), isPresent: true, absenceReason: null, verifiedBy: 'Security Officer', verifiedAt: null },
+                ],
+                requests: [
+                    { id: 'REQ-1', studentId: 'ST2024003', type: 'Exit Authorization', description: 'Weekend family visit', startDate: '2026-04-21', endDate: '2026-04-23', status: 'pending', createdAt: new Date(Date.now() - 1000 * 60 * 600).toISOString() },
+                    { id: 'REQ-2', studentId: 'ST2024004', type: 'Room Change', description: 'Need quiet room for exams', startDate: null, endDate: null, status: 'inProgress', createdAt: new Date(Date.now() - 1000 * 60 * 500).toISOString() },
+                    { id: 'REQ-3', studentId: 'ST2024006', type: 'Visitor', description: 'Parents visit on Friday', startDate: '2026-04-25', endDate: '2026-04-25', status: 'approved', createdAt: new Date(Date.now() - 1000 * 60 * 420).toISOString() },
+                    { id: 'REQ-4', studentId: 'ST2024008', type: 'Maintenance', description: 'Water leak in room D-401', startDate: null, endDate: null, status: 'pending', createdAt: new Date(Date.now() - 1000 * 60 * 390).toISOString() },
+                    { id: 'REQ-5', studentId: 'ST2024010', type: 'Sanction Appeal', description: 'Appeal for late return sanction', startDate: null, endDate: null, status: 'refused', createdAt: new Date(Date.now() - 1000 * 60 * 350).toISOString() },
+                    { id: 'REQ-6', studentId: 'ST2024002', type: 'Exit Authorization', description: 'Conference participation', startDate: '2026-04-28', endDate: '2026-04-29', status: 'pending', createdAt: new Date(Date.now() - 1000 * 60 * 300).toISOString() },
+                ],
+                sanctions: [
+                    { id: 'SAN-1', studentId: 'ST2024005', type: 'Warning', severity: 'Light', startDate: '2026-04-01', endDate: '2026-04-30', status: 'Active', reason: 'Repeated curfew delays', appliedBy: 'Administrator' },
+                    { id: 'SAN-2', studentId: 'ST2024008', type: 'Temporary exclusion', severity: 'Medium', startDate: '2026-03-20', endDate: '2026-03-27', status: 'Completed', reason: 'Unauthorized exit', appliedBy: 'Administrator' },
+                    { id: 'SAN-3', studentId: 'ST2024003', type: 'Warning', severity: 'Light', startDate: '2026-04-10', endDate: '2026-05-10', status: 'Active', reason: 'Missing roll call', appliedBy: 'Pavilion Manager' },
+                ],
+                notifications: [
+                    { id: 'NOTIF-1', message: 'John Doe requested exit authorization', type: 'request', timestamp: new Date(Date.now() - 1000 * 60 * 45).toISOString(), isRead: false },
+                    { id: 'NOTIF-2', message: 'Sanction issued to Jane Smith', type: 'alert', timestamp: new Date(Date.now() - 1000 * 60 * 120).toISOString(), isRead: false },
+                    { id: 'NOTIF-3', message: 'Entry approved for Youssef Alaoui', type: 'success', timestamp: new Date(Date.now() - 1000 * 60 * 10).toISOString(), isRead: true },
+                    { id: 'NOTIF-4', message: 'Maintenance request moved to in progress', type: 'info', timestamp: new Date(Date.now() - 1000 * 60 * 90).toISOString(), isRead: true },
+                    { id: 'NOTIF-5', message: '3 pending requests awaiting review', type: 'request', timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(), isRead: false },
+                ],
+            };
+        }
+
+        function loadStore() {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) {
+                const initial = createInitialDataStore();
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
+                return initial;
+            }
+            try {
+                return JSON.parse(raw);
+            } catch {
+                const fallback = createInitialDataStore();
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(fallback));
+                return fallback;
+            }
+        }
+
+        function saveStore(store) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+        }
+
+        function getStudentByStudentId(store, studentId) {
+            return store.students.find((s) => s.studentId.toLowerCase() === studentId.toLowerCase());
+        }
+
+        function getLastMovementForStudent(store, studentId) {
+            const studentMovements = store.movements
+                .filter((m) => m.studentId.toLowerCase() === studentId.toLowerCase())
+                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            return studentMovements[0] || null;
+        }
+
+        function isStudentInside(store, studentId) {
+            const lastMovement = getLastMovementForStudent(store, studentId);
+            return !!lastMovement && lastMovement.type === 'entry';
+        }
+
+        function formatDateTime(isoString) {
+            return new Intl.DateTimeFormat('fr-MA', {
+                timeZone: 'Africa/Casablanca',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+            }).format(new Date(isoString));
+        }
+
+        function renderRecentMovements(store) {
+            const list = document.getElementById('recentMovements');
+            const recent = [...store.movements]
+                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                .slice(0, 5);
+
+            if (!recent.length) {
+                list.innerHTML = '<li class="text-gray-400 text-sm">Aucun mouvement pour le moment.</li>';
+                return;
+            }
+
+            list.innerHTML = recent.map((m) => {
+                const student = getStudentByStudentId(store, m.studentId);
+                const typeLabel = m.type === 'entry' ? 'Entrée' : 'Sortie';
+                const typeClasses = m.type === 'entry'
+                    ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                    : 'bg-blue-500/15 text-blue-300 border-blue-500/30';
+                const statusClasses = m.status === 'approved'
+                    ? 'text-emerald-300'
+                    : 'text-amber-300';
+                const statusLabel = m.status === 'approved' ? 'Approuvé' : 'En attente';
+
+                return `
+                    <li class="rounded-2xl border border-gray-800 bg-gray-950 p-3">
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <p class="font-medium text-sm">${student ? `${student.firstName} ${student.lastName}` : m.studentId}</p>
+                                <p class="text-xs text-gray-400 mt-1">${formatDateTime(m.timestamp)}</p>
+                            </div>
+                            <span class="text-xs px-2.5 py-1 rounded-full border ${typeClasses}">${typeLabel}</span>
+                        </div>
+                        <p class="text-xs mt-2 ${statusClasses}">Statut: ${statusLabel}</p>
+                    </li>
+                `;
+            }).join('');
+        }
+
+        function showFeedback({ ok, message, type, timestamp }) {
+            const card = document.getElementById('feedbackCard');
+            card.classList.remove('hidden');
+
+            if (!ok) {
+                card.className = 'mt-6 rounded-2xl p-5 border border-red-500/30 bg-red-500/10';
+                card.innerHTML = `
+                    <p class="font-semibold text-red-300">Erreur</p>
+                    <p class="text-red-100 mt-1">${message}</p>
+                `;
+                return;
+            }
+
+            const isEntry = type === 'entry';
+            card.className = isEntry
+                ? 'mt-6 rounded-2xl p-5 border border-emerald-500/30 bg-emerald-500/10'
+                : 'mt-6 rounded-2xl p-5 border border-blue-500/30 bg-blue-500/10';
+
+            card.innerHTML = `
+                <p class="font-semibold ${isEntry ? 'text-emerald-300' : 'text-blue-300'}">${isEntry ? 'Entrée enregistrée' : 'Sortie enregistrée'}</p>
+                <p class="mt-1 ${isEntry ? 'text-emerald-100' : 'text-blue-100'}">${message}</p>
+                <p class="text-xs mt-2 text-gray-300">Horodatage: ${formatDateTime(timestamp)}</p>
+            `;
+        }
+
+        function handleMovementSubmission(rawValue) {
+            const value = rawValue.trim();
+            const store = loadStore();
+            const student = getStudentByStudentId(store, value);
+
+            if (!student) {
+                showFeedback({
+                    ok: false,
+                    message: `Aucun étudiant trouvé pour le matricule "${value}".`,
+                });
+                return;
+            }
+
+            const inside = isStudentInside(store, student.studentId);
+            const type = inside ? 'exit' : 'entry';
+            const status = inside ? 'pending' : 'approved';
+            const movement = {
+                id: `MV-${Date.now()}`,
+                studentId: student.studentId,
+                type,
+                timestamp: new Date().toISOString(),
+                status,
+                approvedBy: inside ? null : 'Security Officer',
+            };
+
+            store.movements.push(movement);
+            saveStore(store);
+            renderRecentMovements(store);
+
+            showFeedback({
+                ok: true,
+                type,
+                timestamp: movement.timestamp,
+                message: type === 'entry'
+                    ? `${student.firstName} ${student.lastName} est marqué ENTRÉE (approuvée).`
+                    : `${student.firstName} ${student.lastName} est marqué SORTIE (en attente d'approbation).`,
+            });
+        }
+
+        function randomStudentId(store) {
+            const index = Math.floor(Math.random() * store.students.length);
+            return store.students[index].studentId;
+        }
+
+        function updateClock() {
+            const now = new Intl.DateTimeFormat('fr-MA', {
+                timeZone: 'Africa/Casablanca',
+                weekday: 'short',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+            }).format(new Date());
+            document.getElementById('clock').textContent = now;
+        }
+
+        function initPage() {
+            const store = loadStore();
+            renderRecentMovements(store);
+            updateClock();
+            setInterval(updateClock, 1000);
+
+            const input = document.getElementById('studentInput');
+            const submitBtn = document.getElementById('submitMovementBtn');
+            const qrBtn = document.getElementById('simulateQrBtn');
+
+            submitBtn.addEventListener('click', () => {
+                if (!input.value.trim()) {
+                    showFeedback({ ok: false, message: 'Veuillez saisir un matricule avant validation.' });
+                    return;
+                }
+                handleMovementSubmission(input.value);
+                input.value = '';
+                input.focus();
+            });
+
+            qrBtn.addEventListener('click', () => {
+                const latestStore = loadStore();
+                const simulated = randomStudentId(latestStore);
+                input.value = simulated;
+                handleMovementSubmission(simulated);
+                input.value = '';
+                input.focus();
+            });
+
+            input.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    submitBtn.click();
+                }
+            });
+        }
+
+        initPage();
+    </script>
+</body>
+</html>

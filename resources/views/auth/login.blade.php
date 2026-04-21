@@ -17,18 +17,18 @@
                 @csrf
                 
                 <div class="mb-3">
-                    <label for="username" class="form-label">Nom d'utilisateur</label>
+                    <label for="email" class="form-label">Adresse e-mail</label>
                     <input 
-                        type="text" 
-                        class="form-control @error('username') is-invalid @enderror"
-                        id="username" 
-                        name="username" 
-                        value="{{ old('username') }}" 
+                        type="email" 
+                        class="form-control @error('email') is-invalid @enderror"
+                        id="email" 
+                        name="email" 
+                        value="{{ old('email') }}" 
                         required 
                         autofocus
-                        placeholder="admin, agent, ou CNE..."
+                        placeholder="admin@cmc.ma"
                     >
-                    @error('username')
+                    @error('email')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
@@ -56,11 +56,9 @@
         </div>
 
         <div class="text-center mt-4 text-muted small">
-            <p class="mb-2">Première visite? <a href="{{ route('setup') }}">Créer les données de test</a></p>
             <p class="mb-1"><strong>Comptes par défaut :</strong></p>
-            <p class="mb-1">Admin: <strong>admin</strong> / password</p>
-            <p class="mb-1">Agent: <strong>agent</strong> / password</p>
-            <p class="mb-0">Étudiant: <strong>CNE12345</strong> / password</p>
+            <p class="mb-1">Admin: <strong>admin@cmc.ma</strong> / password</p>
+            <p class="mb-1">Sécurité: <strong>security1@cmc.ma</strong> / password</p>
         </div>
     </div>
 </div>

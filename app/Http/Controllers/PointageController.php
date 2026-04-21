@@ -2,18 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use App\Models\Movement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class PointageController extends Controller
 {
     public function kiosk()
     {
-        $recent_movements = Movement::with('user')
-            ->latest()
-            ->take(5)
+        $recent_movements = DB::table('mouvements')
+            ->join('etudiants', 'mouvements.etudiant_id', '=', 'etudiants.id')
+            ->select('mouvements.*', 'etudiants.nom as etudiant_nom', 'etudiants.prenom as etudiant_prenom')
+            ->orderByDesc('mouvements.date_heure')
+            ->limit(5)
             ->get();
 
         return view('kiosk.index', compact('recent_movements'));
@@ -21,9 +22,20 @@ class PointageController extends Controller
 
     public function index()
     {
-        $recent_movements = Movement::with('user')
-            ->latest()
-            ->take(50)
+        $recent_movements = DB::table('mouvements')
+            ->join('etudiants', 'mouvements.etudiant_id', '=', 'etudiants.id')
+            ->join('pavillons', 'mouvements.pavillon_id', '=', 'pavillons.id')
+            ->leftJoin('chambres', 'etudiants.chambre_id', '=', 'chambres.id')
+            ->select(
+                'mouvements.*',
+                'etudiants.nom as etudiant_nom',
+                'etudiants.prenom as etudiant_prenom',
+                'etudiants.cin',
+                'chambres.numero as chambre_numero',
+                'pavillons.type as pavillon_nom'
+            )
+            ->orderByDesc('mouvements.date_heure')
+            ->limit(50)
             ->get();
 
         return view('pointage.index', compact('recent_movements'));
@@ -35,39 +47,43 @@ class PointageController extends Controller
             'cne' => 'required|string',
         ]);
 
-        $student = User::where('cne', $request->cne)
-            ->where('role', 'student')
+        $student = DB::table('etudiants')
+            ->where('cin', $request->cne)
+            ->whereNull('deleted_at')
             ->first();
 
         if (!$student) {
-            return back()->with('error', 'Étudiant non trouvé avec ce CNE.');
+            return back()->with('error', 'Étudiant non trouvé avec ce CIN.');
         }
 
-        $lastMovement = $student->lastMovement();
-        $newType = 'entree';
+        $lastMovement = DB::table('mouvements')
+            ->where('etudiant_id', $student->id)
+            ->orderByDesc('date_heure')
+            ->first();
 
+        $newType = 'entree';
         if ($lastMovement && $lastMovement->type === 'entree') {
             $newType = 'sortie';
         }
 
-        try {
-            DB::transaction(function () use ($student, $newType) {
-                Movement::create([
-                    'user_id' => $student->id,
-                    'type' => $newType,
-                    'scanned_at' => now(),
-                ]);
-            });
+        // Get first pavillon as default
+        $pavillon = DB::table('pavillons')->first();
 
-            $message = $newType === 'entree' 
-                ? "✅ {$student->prenom} {$student->nom} est entré(e)." 
-                : "👋 {$student->prenom} {$student->nom} est sorti(e).";
+        DB::table('mouvements')->insert([
+            'etudiant_id' => $student->id,
+            'pavillon_id' => $pavillon->id ?? 1,
+            'type' => $newType,
+            'date_heure' => now(),
+            'enregistre_par' => Auth::id(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
 
-            return back()->with('success', $message);
+        $message = $newType === 'entree'
+            ? "✅ {$student->prenom} {$student->nom} est entré(e)."
+            : "👋 {$student->prenom} {$student->nom} est sorti(e).";
 
-        } catch (\Exception $e) {
-            return back()->with('error', 'Erreur lors de l\'enregistrement.');
-        }
+        return back()->with('success', $message);
     }
 
     public function kioskScan(Request $request)
@@ -77,66 +93,62 @@ class PointageController extends Controller
             'movement_type' => 'required|in:entree,sortie',
         ]);
 
-        $student = User::where('cne', $request->cne)
-            ->where('role', 'student')
+        $student = DB::table('etudiants')
+            ->where('cin', $request->cne)
+            ->whereNull('deleted_at')
             ->first();
 
         if (!$student) {
-            return back()->with('error', 'Étudiant non trouvé avec ce CNE.');
+            return back()->with('error', 'Étudiant non trouvé avec ce CIN.');
         }
 
-        $requestedType = $request->movement_type;
-        $lastMovement = $student->lastMovement();
+        $pavillon = DB::table('pavillons')->first();
 
-        if ($requestedType === 'entree' && $lastMovement && $lastMovement->type === 'entree') {
-            return back()->with('error', 'Cet étudiant est déjà marqué à l\'intérieur.');
-        }
+        DB::table('mouvements')->insert([
+            'etudiant_id' => $student->id,
+            'pavillon_id' => $pavillon->id ?? 1,
+            'type' => $request->movement_type,
+            'date_heure' => now(),
+            'enregistre_par' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
 
-        if ($requestedType === 'sortie' && (!$lastMovement || $lastMovement->type === 'sortie')) {
-            return back()->with('error', 'Cet étudiant n\'est pas actuellement à l\'intérieur.');
-        }
-
-        try {
-            Movement::create([
-                'user_id' => $student->id,
-                'type' => $requestedType,
-                'scanned_at' => now(),
-            ]);
-
-            return back()
-                ->with('success', $requestedType === 'entree'
-                    ? "{$student->prenom} {$student->nom} marqué ENTRÉE."
-                    : "{$student->prenom} {$student->nom} marqué SORTIE.")
-                ->with('movement_type', $requestedType)
-                ->with('movement_student', "{$student->prenom} {$student->nom}")
-                ->with('movement_time', now()->timezone('Africa/Casablanca')->format('d/m/Y H:i:s'));
-        } catch (\Exception $e) {
-            return back()->with('error', 'Erreur lors de l\'enregistrement.');
-        }
+        return back()
+            ->with('success', $request->movement_type === 'entree'
+                ? "{$student->prenom} {$student->nom} marqué ENTRÉE."
+                : "{$student->prenom} {$student->nom} marqué SORTIE.")
+            ->with('movement_type', $request->movement_type)
+            ->with('movement_student', "{$student->prenom} {$student->nom}")
+            ->with('movement_time', now()->timezone('Africa/Casablanca')->format('d/m/Y H:i:s'));
     }
 
     public function manualEntry(Request $request)
     {
         $request->validate([
-            'cne' => 'required|string|exists:users,cne',
+            'cne' => 'required|string',
             'type' => 'required|in:entree,sortie',
         ]);
 
-        $student = User::where('cne', $request->cne)->first();
-        $lastMovement = $student->lastMovement();
+        $student = DB::table('etudiants')
+            ->where('cin', $request->cne)
+            ->whereNull('deleted_at')
+            ->first();
 
-        if ($request->type === 'entree' && $lastMovement && $lastMovement->type === 'entree') {
-            return back()->with('error', 'L\'étudiant est déjà à l\'intérieur.');
+        if (!$student) {
+            return back()->with('error', 'Étudiant non trouvé.');
         }
 
-        if ($request->type === 'sortie' && (!$lastMovement || $lastMovement->type === 'sortie')) {
-            return back()->with('error', 'L\'étudiant n\'est pas à l\'intérieur.');
-        }
+        $pavillon = DB::table('pavillons')->first();
 
-        Movement::create([
-            'user_id' => $student->id,
+        DB::table('mouvements')->insert([
+            'etudiant_id' => $student->id,
+            'pavillon_id' => $pavillon->id ?? 1,
             'type' => $request->type,
-            'scanned_at' => now(),
+            'date_heure' => now(),
+            'enregistre_par' => Auth::id(),
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
         return back()->with('success', 'Mouvement enregistré manuellement.');

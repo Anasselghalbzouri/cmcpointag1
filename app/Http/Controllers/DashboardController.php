@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use App\Models\Movement;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -12,7 +12,11 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
         
-        if ($user->isStaff()) {
+        if ($user->isSecurity()) {
+            return redirect()->route('pointage.index');
+        }
+
+        if ($user->isAdmin()) {
             return $this->adminDashboard();
         }
         
@@ -21,64 +25,74 @@ class DashboardController extends Controller
 
     private function adminDashboard()
     {
-        $students = User::where('role', 'student')->get();
-        $totalStudents = $students->count();
-        $studentsInside = $students->filter(fn($s) => $s->currentStatus() === 'a_linterieur')->count();
-        $studentsOutside = $students->filter(fn($s) => $s->currentStatus() === 'a_lexterieur')->count();
+        // Count from etudiants table
+        $totalStudents = DB::table('etudiants')->whereNull('deleted_at')->count();
+        $activeStudents = DB::table('etudiants')->where('statut', 'actif')->whereNull('deleted_at')->count();
 
-        $pendingExitCount = Movement::where('type', 'sortie')
-            ->whereDate('scanned_at', today())
-            ->count();
+        // Today's movements from mouvements table
+        $totalMovementsToday = DB::table('mouvements')->whereDate('date_heure', today())->count();
 
-        $studentsWithoutMovementToday = $students->filter(function ($student) {
-            return !$student->movements()
-                ->whereDate('scanned_at', today())
-                ->exists();
-        })->count();
+        // Latest movements
+        $recent_movements = DB::table('mouvements')
+            ->join('etudiants', 'mouvements.etudiant_id', '=', 'etudiants.id')
+            ->join('pavillons', 'mouvements.pavillon_id', '=', 'pavillons.id')
+            ->select(
+                'mouvements.*',
+                'etudiants.nom as etudiant_nom',
+                'etudiants.prenom as etudiant_prenom',
+                'pavillons.type as pavillon_nom'
+            )
+            ->orderByDesc('mouvements.date_heure')
+            ->limit(8)
+            ->get();
 
-        $occupancyRate = $totalStudents > 0
-            ? round(($studentsInside / $totalStudents) * 100, 1)
-            : 0;
+        // Demandes en attente
+        $pendingDemandes = DB::table('demandes')->where('statut', 'en_attente')->count();
+
+        // Active sanctions
+        $activeSanctions = DB::table('sanctions')->where('statut', 'active')->whereNull('deleted_at')->count();
+
+        // Visites en cours
+        $activeVisites = DB::table('visites')->where('statut', 'en_cours')->whereNull('deleted_at')->count();
+
+        // Pavillon data
+        $pavilions = DB::table('pavillons')->get()->map(function ($pav) {
+            $chambresCount = DB::table('chambres')->where('pavillon_id', $pav->id)->whereNull('deleted_at')->count();
+            $totalCapacity = DB::table('chambres')->where('pavillon_id', $pav->id)->whereNull('deleted_at')->sum('capacite');
+            $totalOccupants = DB::table('chambres')->where('pavillon_id', $pav->id)->whereNull('deleted_at')->sum('occupants_actuels');
+            
+            return (object) [
+                'id' => $pav->id,
+                'nom' => ucfirst($pav->type),
+                'type' => $pav->type,
+                'chambres_count' => $chambresCount,
+                'capacity' => $totalCapacity,
+                'occupied' => $totalOccupants,
+                'free' => max($totalCapacity - $totalOccupants, 0),
+                'occupancy_rate' => $totalCapacity > 0 ? round(($totalOccupants / $totalCapacity) * 100, 1) : 0,
+            ];
+        });
+
+        // Overall occupancy
+        $totalCapacity = $pavilions->sum('capacity');
+        $totalOccupied = $pavilions->sum('occupied');
+        $occupancyRate = $totalCapacity > 0 ? round(($totalOccupied / $totalCapacity) * 100, 1) : 0;
 
         $stats = [
             'total_students' => $totalStudents,
-            'total_movements_today' => Movement::whereDate('scanned_at', today())->count(),
-            'students_inside' => $studentsInside,
-            'students_outside' => $studentsOutside,
-            'present_22h' => $studentsInside,
-            'absent_22h' => $studentsOutside,
-            'pending_requests' => $pendingExitCount,
+            'active_students' => $activeStudents,
+            'total_movements_today' => $totalMovementsToday,
+            'pending_demandes' => $pendingDemandes,
+            'active_sanctions' => $activeSanctions,
+            'active_visites' => $activeVisites,
             'occupancy_rate' => $occupancyRate,
         ];
 
-        $recent_movements = Movement::with('user')
-            ->latest()
-            ->take(5)
-            ->get();
-
-        $pavilions = [
-            ['name' => 'Pavilion A', 'capacity' => 50, 'status' => 'Active', 'occupied' => 0],
-            ['name' => 'Pavilion B', 'capacity' => 40, 'status' => 'Active', 'occupied' => 0],
-            ['name' => 'Pavilion C', 'capacity' => 30, 'status' => 'Maintenance', 'occupied' => 0],
-            ['name' => 'Pavilion D', 'capacity' => 60, 'status' => 'Active', 'occupied' => 0],
-        ];
-
-        foreach ($students as $student) {
-            $index = ($student->id - 1) % count($pavilions);
-            $pavilions[$index]['occupied']++;
-        }
-
-        foreach ($pavilions as &$pavilion) {
-            $pavilion['free'] = max($pavilion['capacity'] - $pavilion['occupied'], 0);
-            $pavilion['occupancy_rate'] = $pavilion['capacity'] > 0
-                ? round(($pavilion['occupied'] / $pavilion['capacity']) * 100, 1)
-                : 0;
-        }
-
         $alerts = [
-            ['label' => 'Sorties en attente', 'value' => $pendingExitCount, 'variant' => $pendingExitCount > 0 ? 'warning' : 'success'],
-            ['label' => 'Absences non justifiées (jour)', 'value' => $studentsWithoutMovementToday, 'variant' => $studentsWithoutMovementToday > 0 ? 'danger' : 'success'],
-            ['label' => 'Mouvements aujourd\'hui', 'value' => $stats['total_movements_today'], 'variant' => 'info'],
+            ['label' => 'Demandes en attente', 'value' => $pendingDemandes, 'variant' => $pendingDemandes > 0 ? 'warning' : 'success'],
+            ['label' => 'Sanctions actives', 'value' => $activeSanctions, 'variant' => $activeSanctions > 0 ? 'danger' : 'success'],
+            ['label' => 'Visiteurs en cours', 'value' => $activeVisites, 'variant' => $activeVisites > 0 ? 'info' : 'success'],
+            ['label' => 'Mouvements aujourd\'hui', 'value' => $totalMovementsToday, 'variant' => 'info'],
         ];
 
         return view('dashboard.admin', compact('stats', 'recent_movements', 'pavilions', 'alerts'));
@@ -86,12 +100,8 @@ class DashboardController extends Controller
 
     private function studentDashboard(User $student)
     {
-        $my_movements = $student->movements()
-            ->latest()
-            ->take(20)
-            ->get();
-
-        $status = $student->currentStatus();
+        $my_movements = collect();
+        $status = 'jamais_scanne';
 
         return view('dashboard.student', compact('my_movements', 'status'));
     }

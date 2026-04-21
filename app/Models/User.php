@@ -4,18 +4,21 @@ namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class User extends Authenticatable
 {
-    use Notifiable;
+    use Notifiable, SoftDeletes;
+
+    protected $table = 'utilisateurs';
 
     protected $fillable = [
-        'username',
-        'password',
         'nom',
         'prenom',
+        'email',
+        'telephone',
+        'password',
         'role',
-        'cne',
     ];
 
     protected $hidden = [
@@ -26,6 +29,7 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
+            'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
@@ -35,35 +39,26 @@ class User extends Authenticatable
         return $this->role === 'admin';
     }
 
-    public function isAgent(): bool
+    public function isSecurity(): bool
     {
-        return $this->role === 'agent';
+        return $this->role === 'security';
     }
 
     public function isStudent(): bool
     {
-        return $this->role === 'student';
+        return $this->role === 'etudiant';
     }
 
     public function isStaff(): bool
     {
-        return $this->isAdmin() || $this->isAgent();
+        return $this->isAdmin() || $this->isSecurity();
     }
 
-    public function movements()
+    /**
+     * Kept for backward compatibility — alias for isSecurity().
+     */
+    public function isAgent(): bool
     {
-        return $this->hasMany(Movement::class);
-    }
-
-    public function lastMovement()
-    {
-        return $this->movements()->latest()->first();
-    }
-
-    public function currentStatus(): string
-    {
-        $last = $this->lastMovement();
-        if (!$last) return 'jamais_scanne';
-        return $last->type === 'entree' ? 'a_linterieur' : 'a_lexterieur';
+        return $this->isSecurity();
     }
 }

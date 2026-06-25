@@ -1,6 +1,6 @@
 # CMC Pointage
 
-Application Laravel de gestion de présence pour une cité universitaire (entrées/sorties des étudiants, affectation des chambres, demandes, sanctions, visites).
+Application Laravel de gestion de présence pour la Cité des Métiers et des Compétences (CMC) — entrées/sorties des étudiants, affectation des chambres, demandes, sanctions, visites.
 
 ## Prérequis
 

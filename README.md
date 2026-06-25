@@ -57,6 +57,17 @@ Vérifier l'installation sur `/setup`.
 
 Compte admin par défaut : `admin@cmc.ma / password`
 
+## Aperçu
+
+| | |
+|---|---|
+| ![Dashboard](screenshots/01-dashboard.png) | ![Étudiants](screenshots/02-etudiants.png) |
+| ![Ajouter un étudiant](screenshots/03-ajouter-etudiant.png) | ![Mouvements](screenshots/04-mouvements.png) |
+| ![Visites](screenshots/05-visites.png) | ![Demandes](screenshots/06-demandes.png) |
+| ![Sanctions](screenshots/07-sanctions.png) | ![Pavillons](screenshots/08-pavillons.png) |
+| ![Chambres](screenshots/09-chambres.png) | ![Utilisateurs](screenshots/10-utilisateurs.png) |
+| ![Rapports](screenshots/11-rapports.png) | ![Pointage](screenshots/12-pointage.png) |
+
 ## Tests
 
 ```bash

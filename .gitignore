@@ -26,9 +26,10 @@ Thumbs.db
 bash.exe.stackdump
 
 # Screenshots / capture exports (not part of the app)
-/screenshots/
+/screenshots/*
 *.png
 *.webp
 !public/images/**/*.png
 !public/images/**/*.webp
 !resources/**/*.png
+!screenshots/[0-9][0-9]-*.png

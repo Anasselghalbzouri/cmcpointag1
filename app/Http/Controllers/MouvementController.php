@@ -43,7 +43,7 @@ class MouvementController extends Controller
             $query->whereDate('mouvements.date_heure', $date);
         }
 
-        $mouvements = $query->orderByDesc('mouvements.date_heure')->limit(200)->get();
+        $mouvements = $query->orderByDesc('mouvements.date_heure')->paginate(25)->withQueryString();
 
         // Stats
         $todayCount = DB::table('mouvements')->whereDate('date_heure', today())->count();

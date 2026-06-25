@@ -41,10 +41,10 @@
                             <span class="text-muted">CIN</span>
                             <strong>{{ $sanction->cin }}</strong>
                         </div>
-                        @if($sanction->montant_amende)
+                        @if($sanction->date_fin)
                         <div class="list-group-item d-flex justify-content-between py-2 px-0" style="font-size:.85rem;">
-                            <span class="text-muted">Montant</span>
-                            <strong class="text-danger">{{ number_format($sanction->montant_amende, 0) }} DH</strong>
+                            <span class="text-muted">Durée</span>
+                            <strong class="text-danger">{{ \Carbon\Carbon::parse($sanction->date_sanction)->diffInDays(\Carbon\Carbon::parse($sanction->date_fin)) }} jours</strong>
                         </div>
                         @endif
                         @if($sanction->date_fin)

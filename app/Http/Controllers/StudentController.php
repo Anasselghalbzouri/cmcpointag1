@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Services\StudentAcademicYearService;
 
 class StudentController extends Controller
 {
@@ -41,7 +42,7 @@ class StudentController extends Controller
             $query->where('pavillons.id', $pavillon);
         }
 
-        $students = $query->orderBy('etudiants.nom')->get();
+        $students = $query->orderBy('etudiants.nom')->paginate(20)->withQueryString();
         $pavillons = DB::table('pavillons')->get();
 
         return view('students.index', compact('students', 'pavillons'));
@@ -115,9 +116,20 @@ class StudentController extends Controller
             'sexe' => 'required|in:M,F',
             'chambre_id' => 'nullable|exists:chambres,id',
             'nationalite' => 'nullable|string|max:100',
+            'duree_formation' => 'required|in:2_ans,2_ans_demi',
         ]);
 
-        $validated['date_entree'] = now()->toDateString();
+        if (!empty($validated['chambre_id'])) {
+            $error = $this->checkChambreAssignment($validated['chambre_id'], $validated['sexe']);
+            if ($error) {
+                return back()->withErrors(['chambre_id' => $error])->withInput();
+            }
+        }
+
+        $dateEntree = now();
+        $validated['date_entree'] = $dateEntree->toDateString();
+        $validated['date_sortie_prevue'] = $this->computeDateSortiePrevue($dateEntree, $validated['duree_formation']);
+        $validated['annee_etude'] = '1';
         $validated['statut'] = 'actif';
         $validated['nationalite'] = $validated['nationalite'] ?? 'Maroc';
         $validated['created_at'] = now();
@@ -177,11 +189,26 @@ class StudentController extends Controller
             'chambre_id' => 'nullable|exists:chambres,id',
             'nationalite' => 'nullable|string|max:100',
             'statut' => 'required|in:actif,suspendu,sorti,archive',
+            'duree_formation' => 'required|in:2_ans,2_ans_demi',
         ]);
+
+        if ($validated['duree_formation'] !== $student->duree_formation) {
+            $validated['date_sortie_prevue'] = $this->computeDateSortiePrevue(
+                \Carbon\Carbon::parse($student->date_entree),
+                $validated['duree_formation']
+            );
+        }
 
         // Handle room change
         $oldChambreId = $student->chambre_id;
         $newChambreId = $validated['chambre_id'] ?? null;
+
+        if ($newChambreId && $oldChambreId != $newChambreId) {
+            $error = $this->checkChambreAssignment($newChambreId, $validated['sexe']);
+            if ($error) {
+                return back()->withErrors(['chambre_id' => $error])->withInput();
+            }
+        }
 
         if ($oldChambreId != $newChambreId) {
             if ($oldChambreId) {
@@ -219,5 +246,46 @@ class StudentController extends Controller
         }
 
         return redirect()->route('students.index')->with('success', 'Étudiant supprimé avec succès.');
+    }
+
+    public function processAcademicYear(StudentAcademicYearService $service)
+    {
+        $result = $service->process();
+
+        return redirect()->route('students.index')->with(
+            'success',
+            "Traitement terminé : {$result['archived']} étudiant(s) archivé(s), {$result['promoted']} promu(s) en 2e année."
+        );
+    }
+
+    private function computeDateSortiePrevue(\Carbon\Carbon $dateEntree, string $dureeFormation): string
+    {
+        $months = $dureeFormation === '2_ans_demi' ? 30 : 24;
+
+        return $dateEntree->copy()->addMonths($months)->toDateString();
+    }
+
+    private function checkChambreAssignment(int $chambreId, string $sexe): ?string
+    {
+        $chambre = DB::table('chambres')
+            ->join('pavillons', 'chambres.pavillon_id', '=', 'pavillons.id')
+            ->where('chambres.id', $chambreId)
+            ->select('chambres.occupants_actuels', 'chambres.capacite', 'pavillons.type as pavillon_type')
+            ->first();
+
+        if (!$chambre) {
+            return 'Chambre introuvable.';
+        }
+
+        if ($chambre->occupants_actuels >= $chambre->capacite) {
+            return 'Cette chambre est complète.';
+        }
+
+        $expectedType = $sexe === 'F' ? 'femme' : 'homme';
+        if ($chambre->pavillon_type !== $expectedType) {
+            return 'Le pavillon de cette chambre ne correspond pas au sexe de l\'étudiant.';
+        }
+
+        return null;
     }
 }

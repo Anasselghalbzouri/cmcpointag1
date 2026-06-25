@@ -64,6 +64,20 @@
                 </div>
             </div>
         </div>
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="kpi-card animate-in delay-4">
+                <div class="card-body d-flex align-items-center gap-3 py-3 px-3">
+                    <div class="kpi-icon" style="background:linear-gradient(135deg,#ede9fe,#f5f3ff); color:#7c3aed;">
+                        <i class="bi bi-calendar-event-fill"></i>
+                    </div>
+                    <div>
+                        <div class="kpi-label">Fins de formation imminentes</div>
+                        <div class="kpi-value">{{ $stats['upcoming_departures'] }}</div>
+                        <div class="text-muted" style="font-size:.72rem;">dans les 30 jours</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="row g-3">

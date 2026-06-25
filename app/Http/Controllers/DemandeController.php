@@ -43,7 +43,7 @@ class DemandeController extends Controller
             $query->where('demandes.type', $type);
         }
 
-        $demandes = $query->orderByDesc('demandes.created_at')->get();
+        $demandes = $query->orderByDesc('demandes.created_at')->paginate(20)->withQueryString();
 
         $stats = [
             'total' => DB::table('demandes')->whereNull('deleted_at')->count(),
@@ -56,6 +56,40 @@ class DemandeController extends Controller
         $types = DB::table('demandes')->whereNull('deleted_at')->distinct()->pluck('type');
 
         return view('demandes.index', compact('demandes', 'stats', 'types'));
+    }
+
+    public function create()
+    {
+        $students = DB::table('etudiants')
+            ->whereNull('deleted_at')
+            ->orderBy('nom')
+            ->select('id', 'nom', 'prenom', 'cin')
+            ->get();
+
+        return view('demandes.create', compact('students'));
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'etudiant_id' => 'required|exists:etudiants,id',
+            'type' => 'required|in:changement_chambre,extension,permission,autre',
+            'description' => 'required|string|max:2000',
+            'date_limite' => 'nullable|date|after_or_equal:today',
+        ]);
+
+        $id = DB::table('demandes')->insertGetId([
+            'etudiant_id' => $request->etudiant_id,
+            'type' => $request->type,
+            'description' => $request->description,
+            'statut' => 'en_attente',
+            'date_limite' => $request->date_limite,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return redirect()->route('demandes.show', $id)
+            ->with('success', 'Demande créée avec succès.');
     }
 
     public function show($id)

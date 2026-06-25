@@ -43,7 +43,7 @@ class SanctionController extends Controller
             $query->where('sanctions.type', $type);
         }
 
-        $sanctions = $query->orderByDesc('sanctions.date_sanction')->get();
+        $sanctions = $query->orderByDesc('sanctions.date_sanction')->paginate(20)->withQueryString();
 
         $stats = [
             'total' => DB::table('sanctions')->whereNull('deleted_at')->count(),
@@ -53,6 +53,49 @@ class SanctionController extends Controller
         ];
 
         return view('sanctions.index', compact('sanctions', 'stats'));
+    }
+
+    public function create()
+    {
+        $students = DB::table('etudiants')
+            ->whereNull('deleted_at')
+            ->orderBy('nom')
+            ->select('id', 'nom', 'prenom', 'cin')
+            ->get();
+
+        return view('sanctions.create', compact('students'));
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'etudiant_id' => 'required|exists:etudiants,id',
+            'type' => 'required|in:avertissement,suspension,amende,exclusion',
+            'motif' => 'required|string|max:255',
+            'description' => 'required|string|max:2000',
+            'date_sanction' => 'required|date',
+            'duree' => 'nullable|integer|min:1',
+        ]);
+
+        $dateFin = $request->duree
+            ? \Carbon\Carbon::parse($request->date_sanction)->addDays((int) $request->duree)->format('Y-m-d')
+            : null;
+
+        $id = DB::table('sanctions')->insertGetId([
+            'etudiant_id' => $request->etudiant_id,
+            'type' => $request->type,
+            'motif' => $request->motif,
+            'description' => $request->description,
+            'date_sanction' => $request->date_sanction,
+            'date_fin' => $dateFin,
+            'statut' => 'active',
+            'enregistree_par' => Auth::id(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return redirect()->route('sanctions.show', $id)
+            ->with('success', 'Sanction enregistrée avec succès.');
     }
 
     public function show($id)

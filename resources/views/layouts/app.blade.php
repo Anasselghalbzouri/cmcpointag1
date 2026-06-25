@@ -9,10 +9,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <style>
         :root {
-            --sidebar-width: 270px;
-            --sidebar-collapsed: 0px;
-            --header-height: 64px;
-            --bg-sidebar: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+            --topbar-height: 64px;
+            --bg-sidebar: linear-gradient(100deg, #0f172a 0%, #1e293b 100%);
             --bg-body: #f1f5f9;
             --accent: #3b82f6;
             --accent-hover: #2563eb;
@@ -38,241 +36,174 @@
             -webkit-font-smoothing: antialiased;
         }
 
-        /* ── Sidebar ─────────────────────────────── */
-        .sidebar {
+        /* ── Topbar ──────────────────────────────── */
+        .topbar {
             position: fixed;
-            left: 0; top: 0; bottom: 0;
-            width: var(--sidebar-width);
+            top: 0; left: 0; right: 0;
+            height: var(--topbar-height);
             background: var(--bg-sidebar);
             z-index: 1040;
             display: flex;
-            flex-direction: column;
-            transition: transform .3s cubic-bezier(.4,0,.2,1);
-            border-right: 1px solid rgba(255,255,255,.06);
+            align-items: center;
+            gap: 1.25rem;
+            padding: 0 1.25rem;
+            border-bottom: 1px solid rgba(255,255,255,.06);
         }
 
-        .sidebar-brand {
-            padding: 1.5rem 1.5rem 1rem;
+        .topbar-brand {
             display: flex;
             align-items: center;
-            gap: .75rem;
+            gap: .65rem;
+            flex-shrink: 0;
+            text-decoration: none;
         }
-        .sidebar-brand-icon {
+        .topbar-brand-icon {
             width: 40px; height: 40px;
-            background: var(--accent);
-            border-radius: .75rem;
+            background: #fff;
+            border-radius: .65rem;
             display: flex; align-items: center; justify-content: center;
-            font-size: 1.1rem;
-            color: #fff;
-            font-weight: 800;
-            box-shadow: 0 4px 12px rgba(59,130,246,.35);
+            padding: .3rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,.25);
+            flex-shrink: 0;
         }
-        .sidebar-brand-text {
+        .topbar-brand-icon img {
+            width: 100%; height: 100%;
+            object-fit: contain;
+        }
+        .topbar-brand-text {
             color: #fff;
             font-weight: 800;
-            font-size: 1.15rem;
+            font-size: 1rem;
             letter-spacing: -.01em;
+            line-height: 1.2;
         }
-        .sidebar-brand-sub {
+        .topbar-brand-sub {
             color: #64748b;
-            font-size: .68rem;
+            font-size: .65rem;
             text-transform: uppercase;
-            letter-spacing: .08em;
+            letter-spacing: .06em;
             font-weight: 600;
         }
 
-        .sidebar-nav {
+        .topbar-nav {
             flex: 1;
-            padding: .5rem .75rem;
-            overflow-y: auto;
-        }
-        .sidebar-nav::-webkit-scrollbar { width: 3px; }
-        .sidebar-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 3px; }
-
-        .nav-section-label {
-            color: #475569;
-            font-size: .65rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: .1em;
-            padding: 1.25rem .75rem .5rem;
-        }
-
-        .nav-link-sidebar {
             display: flex;
             align-items: center;
-            gap: .75rem;
-            padding: .7rem .75rem;
-            border-radius: .625rem;
+            gap: .25rem;
+            overflow-x: auto;
+            scrollbar-width: none;
+            min-width: 0;
+        }
+        .topbar-nav::-webkit-scrollbar { display: none; }
+
+        .nav-link-top {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            padding: .55rem .85rem;
+            border-radius: .6rem;
             color: var(--text-sidebar);
             text-decoration: none;
-            font-size: .875rem;
+            font-size: .82rem;
             font-weight: 500;
+            white-space: nowrap;
             transition: var(--transition);
-            margin-bottom: 2px;
-            position: relative;
+            flex-shrink: 0;
         }
-        .nav-link-sidebar:hover {
+        .nav-link-top:hover {
             color: #e2e8f0;
             background: rgba(255,255,255,.06);
         }
-        .nav-link-sidebar.active {
+        .nav-link-top.active {
             color: var(--text-sidebar-active);
             background: var(--accent-light);
             font-weight: 600;
         }
-        .nav-link-sidebar.active::before {
-            content: '';
-            position: absolute;
-            left: -.75rem;
-            top: 50%; transform: translateY(-50%);
-            width: 3px; height: 60%;
-            background: var(--accent);
-            border-radius: 0 3px 3px 0;
+        .nav-link-top .bi {
+            font-size: 1rem;
+            opacity: .75;
         }
-        .nav-link-sidebar .bi {
-            font-size: 1.15rem;
-            width: 1.5rem;
-            text-align: center;
-            opacity: .7;
-        }
-        .nav-link-sidebar.active .bi { opacity: 1; color: var(--accent); }
+        .nav-link-top.active .bi { opacity: 1; color: var(--accent); }
 
         .nav-badge {
-            margin-left: auto;
-            font-size: .65rem;
+            font-size: .62rem;
             font-weight: 700;
-            padding: .2rem .5rem;
+            padding: .15rem .42rem;
             border-radius: 999px;
-            min-width: 1.5rem;
+            min-width: 1.3rem;
             text-align: center;
         }
 
-        .sidebar-footer {
-            padding: 1rem 1.25rem;
-            border-top: 1px solid rgba(255,255,255,.06);
+        .topbar-divider {
+            width: 1px;
+            height: 24px;
+            background: rgba(255,255,255,.1);
+            flex-shrink: 0;
         }
-        .sidebar-user {
+
+        .topbar-right {
             display: flex;
             align-items: center;
-            gap: .75rem;
+            gap: .5rem;
+            flex-shrink: 0;
         }
+
+        .topbar-user {
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+            padding: .35rem .6rem .35rem .4rem;
+            border-radius: .65rem;
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+            background: transparent;
+        }
+        .topbar-user:hover { background: rgba(255,255,255,.06); }
         .sidebar-avatar {
-            width: 38px; height: 38px;
+            width: 34px; height: 34px;
             background: linear-gradient(135deg, #6366f1, #8b5cf6);
-            border-radius: .625rem;
+            border-radius: .55rem;
             display: flex; align-items: center; justify-content: center;
             color: #fff;
             font-weight: 700;
-            font-size: .85rem;
+            font-size: .78rem;
+            flex-shrink: 0;
         }
         .sidebar-user-name {
             color: #e2e8f0;
-            font-size: .85rem;
+            font-size: .8rem;
             font-weight: 600;
+            line-height: 1.2;
         }
         .sidebar-user-role {
             color: #64748b;
-            font-size: .7rem;
+            font-size: .65rem;
             text-transform: uppercase;
             letter-spacing: .04em;
             font-weight: 600;
         }
 
-        /* ── Header ──────────────────────────────── */
-        .main-header {
-            position: fixed;
-            top: 0;
-            left: var(--sidebar-width);
-            right: 0;
-            height: var(--header-height);
-            background: var(--glass-bg);
-            backdrop-filter: blur(12px) saturate(180%);
-            -webkit-backdrop-filter: blur(12px) saturate(180%);
-            border-bottom: 1px solid var(--border-color);
-            z-index: 1030;
-            display: flex;
-            align-items: center;
-            padding: 0 1.5rem;
-            transition: left .3s cubic-bezier(.4,0,.2,1);
-        }
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            flex: 1;
-        }
-        .header-title {
-            font-weight: 700;
-            font-size: 1.05rem;
-            color: #1e293b;
-        }
-        .header-breadcrumb {
-            color: #94a3b8;
-            font-size: .8rem;
-            font-weight: 500;
-        }
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: .75rem;
-        }
-        .header-icon-btn {
-            width: 38px; height: 38px;
-            border-radius: .625rem;
-            border: 1px solid var(--border-color);
-            background: #fff;
-            display: flex; align-items: center; justify-content: center;
-            color: #64748b;
-            cursor: pointer;
-            transition: var(--transition);
-            text-decoration: none;
-            position: relative;
-        }
-        .header-icon-btn:hover {
-            background: #f8fafc;
-            color: #1e293b;
-            border-color: #cbd5e1;
-        }
-        .header-notification-dot {
-            position: absolute;
-            top: 6px; right: 6px;
-            width: 7px; height: 7px;
-            background: #ef4444;
-            border-radius: 50%;
-            border: 2px solid #fff;
-        }
-        .btn-sidebar-toggle {
+        .btn-nav-toggle {
             display: none;
             width: 38px; height: 38px;
             border-radius: .625rem;
-            border: 1px solid var(--border-color);
-            background: #fff;
+            border: 1px solid rgba(255,255,255,.12);
+            background: rgba(255,255,255,.06);
             align-items: center; justify-content: center;
-            color: #64748b;
+            color: #e2e8f0;
             cursor: pointer;
+            flex-shrink: 0;
         }
 
         /* ── Main Content ────────────────────────── */
         .main-content {
-            margin-left: var(--sidebar-width);
-            padding-top: var(--header-height);
+            padding-top: var(--topbar-height);
             min-height: 100vh;
-            transition: margin-left .3s cubic-bezier(.4,0,.2,1);
         }
         .content-wrapper {
             padding: 1.5rem;
             max-width: 1440px;
-        }
-
-        /* ── Sidebar Overlay for Mobile ──────────── */
-        .sidebar-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,.4);
-            z-index: 1035;
-            backdrop-filter: blur(2px);
         }
 
         /* ── Cards ────────────────────────────────── */
@@ -395,13 +326,9 @@
         .delay-4 { animation-delay: .2s; }
 
         /* ── Responsive ──────────────────────────── */
-        @media (max-width: 991.98px) {
-            .sidebar { transform: translateX(-100%); }
-            .sidebar.show { transform: translateX(0); }
-            .sidebar-overlay.show { display: block; }
-            .main-header { left: 0; }
-            .main-content { margin-left: 0; }
-            .btn-sidebar-toggle { display: flex; }
+        @media (max-width: 767.98px) {
+            .topbar-brand-sub { display: none; }
+            .sidebar-user-name, .sidebar-user-role { display: none; }
         }
 
         /* ── Misc ────────────────────────────────── */
@@ -438,100 +365,107 @@
 <body>
 
 @auth
-    <!-- Sidebar Overlay -->
-    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
-
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-brand">
-            <div class="sidebar-brand-icon">CP</div>
-            <div>
-                <div class="sidebar-brand-text">CMC Pointage</div>
-                <div class="sidebar-brand-sub">Gestion résidence</div>
+    <!-- Topbar -->
+    <header class="topbar">
+        <a href="{{ route('dashboard') }}" class="topbar-brand">
+            <div class="topbar-brand-icon">
+                <img src="{{ asset('images/cmc-logo.png') }}" alt="CMC">
             </div>
-        </div>
+            <div>
+                <div class="topbar-brand-text">CMC Pointage</div>
+                <div class="topbar-brand-sub">Gestion résidence</div>
+            </div>
+        </a>
 
-        <nav class="sidebar-nav">
-            <div class="nav-section-label">Principal</div>
-            <a href="{{ route('dashboard') }}" class="nav-link-sidebar {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+        <nav class="topbar-nav">
+            <a href="{{ route('dashboard') }}" class="nav-link-top {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                 <i class="bi bi-grid-1x2-fill"></i> Dashboard
             </a>
 
             @if(auth()->user()->isSecurity())
-                <div class="nav-section-label">Pointage</div>
-                <a href="{{ route('pointage.index') }}" class="nav-link-sidebar {{ request()->routeIs('pointage.*') ? 'active' : '' }}">
+                <a href="{{ route('pointage.index') }}" class="nav-link-top {{ request()->routeIs('pointage.*') ? 'active' : '' }}">
                     <i class="bi bi-upc-scan"></i> Pointage
                 </a>
-                <a href="{{ route('mouvements.index') }}" class="nav-link-sidebar {{ request()->routeIs('mouvements.*') ? 'active' : '' }}">
+                <a href="{{ route('mouvements.index') }}" class="nav-link-top {{ request()->routeIs('mouvements.*') ? 'active' : '' }}">
                     <i class="bi bi-arrow-left-right"></i> Mouvements
+                </a>
+                <a href="{{ route('visites.index') }}" class="nav-link-top {{ request()->routeIs('visites.*') ? 'active' : '' }}">
+                    <i class="bi bi-person-walking"></i> Visites
                 </a>
             @endif
 
             @if(auth()->user()->isAdmin())
-                <div class="nav-section-label">Gestion</div>
-                <a href="{{ route('students.index') }}" class="nav-link-sidebar {{ request()->routeIs('students.*') ? 'active' : '' }}">
+                <a href="{{ route('students.index') }}" class="nav-link-top {{ request()->routeIs('students.*') ? 'active' : '' }}">
                     <i class="bi bi-people-fill"></i> Étudiants
                     <span class="nav-badge bg-primary text-white">{{ \DB::table('etudiants')->where('statut','actif')->whereNull('deleted_at')->count() }}</span>
                 </a>
-                <a href="{{ route('mouvements.index') }}" class="nav-link-sidebar {{ request()->routeIs('mouvements.*') ? 'active' : '' }}">
+                <a href="{{ route('mouvements.index') }}" class="nav-link-top {{ request()->routeIs('mouvements.*') ? 'active' : '' }}">
                     <i class="bi bi-arrow-left-right"></i> Mouvements
                 </a>
+                <a href="{{ route('visites.index') }}" class="nav-link-top {{ request()->routeIs('visites.*') ? 'active' : '' }}">
+                    <i class="bi bi-person-walking"></i> Visites
+                </a>
 
-                <div class="nav-section-label">Administration</div>
-                <a href="{{ route('demandes.index') }}" class="nav-link-sidebar {{ request()->routeIs('demandes.*') ? 'active' : '' }}">
+                <div class="topbar-divider"></div>
+
+                <a href="{{ route('demandes.index') }}" class="nav-link-top {{ request()->routeIs('demandes.*') ? 'active' : '' }}">
                     <i class="bi bi-file-earmark-text-fill"></i> Demandes
                     @php $pendingDemandes = \DB::table('demandes')->where('statut','en_attente')->whereNull('deleted_at')->count(); @endphp
                     @if($pendingDemandes > 0)
                         <span class="nav-badge bg-warning text-dark">{{ $pendingDemandes }}</span>
                     @endif
                 </a>
-                <a href="{{ route('sanctions.index') }}" class="nav-link-sidebar {{ request()->routeIs('sanctions.*') ? 'active' : '' }}">
+                <a href="{{ route('sanctions.index') }}" class="nav-link-top {{ request()->routeIs('sanctions.*') ? 'active' : '' }}">
                     <i class="bi bi-shield-exclamation"></i> Sanctions
                     @php $activeSanctions = \DB::table('sanctions')->where('statut','active')->whereNull('deleted_at')->count(); @endphp
                     @if($activeSanctions > 0)
                         <span class="nav-badge bg-danger text-white">{{ $activeSanctions }}</span>
                     @endif
                 </a>
+
+                <div class="topbar-divider"></div>
+
+                <a href="{{ route('pavillons.index') }}" class="nav-link-top {{ request()->routeIs('pavillons.*') ? 'active' : '' }}">
+                    <i class="bi bi-building"></i> Pavillons
+                </a>
+                <a href="{{ route('chambres.index') }}" class="nav-link-top {{ request()->routeIs('chambres.*') ? 'active' : '' }}">
+                    <i class="bi bi-door-open"></i> Chambres
+                </a>
+                <a href="{{ route('users.index') }}" class="nav-link-top {{ request()->routeIs('users.*') ? 'active' : '' }}">
+                    <i class="bi bi-person-gear"></i> Utilisateurs
+                </a>
+                <a href="{{ route('rapports.index') }}" class="nav-link-top {{ request()->routeIs('rapports.*') ? 'active' : '' }}">
+                    <i class="bi bi-bar-chart-fill"></i> Rapports
+                </a>
             @endif
         </nav>
 
-        <div class="sidebar-footer">
-            <div class="sidebar-user">
-                <div class="sidebar-avatar">
-                    {{ strtoupper(substr(auth()->user()->prenom, 0, 1)) }}{{ strtoupper(substr(auth()->user()->nom, 0, 1)) }}
-                </div>
-                <div>
-                    <div class="sidebar-user-name">{{ auth()->user()->prenom }} {{ auth()->user()->nom }}</div>
-                    <div class="sidebar-user-role">{{ auth()->user()->role }}</div>
-                </div>
-            </div>
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button type="submit" class="btn-logout-sidebar">
-                    <i class="bi bi-box-arrow-left"></i> Déconnexion
+        <div class="topbar-right">
+            <div class="dropdown">
+                <button class="topbar-user" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <div class="sidebar-avatar">
+                        {{ strtoupper(substr(auth()->user()->prenom, 0, 1)) }}{{ strtoupper(substr(auth()->user()->nom, 0, 1)) }}
+                    </div>
+                    <div class="text-start">
+                        <div class="sidebar-user-name">{{ auth()->user()->prenom }} {{ auth()->user()->nom }}</div>
+                        <div class="sidebar-user-role">{{ auth()->user()->role }}</div>
+                    </div>
                 </button>
-            </form>
-        </div>
-    </aside>
-
-    <!-- Header -->
-    <header class="main-header">
-        <div class="header-left">
-            <button class="btn-sidebar-toggle" onclick="toggleSidebar()">
-                <i class="bi bi-list"></i>
-            </button>
-            <div>
-                <div class="header-title">@yield('page-title', 'Dashboard')</div>
-                <div class="header-breadcrumb">@yield('breadcrumb', 'CMC Pointage')</div>
-            </div>
-        </div>
-        <div class="header-right">
-            <div class="header-icon-btn">
-                <i class="bi bi-bell"></i>
-                <span class="header-notification-dot"></span>
-            </div>
-            <div class="header-icon-btn">
-                <i class="bi bi-gear"></i>
+                <ul class="dropdown-menu dropdown-menu-end p-2" style="min-width: 200px;">
+                    <li class="px-2 py-1">
+                        <div class="sidebar-user-name" style="color:#1e293b;">{{ auth()->user()->prenom }} {{ auth()->user()->nom }}</div>
+                        <div class="sidebar-user-role" style="color:#94a3b8;">{{ auth()->user()->role }}</div>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="btn-logout-sidebar">
+                                <i class="bi bi-box-arrow-left"></i> Déconnexion
+                            </button>
+                        </form>
+                    </li>
+                </ul>
             </div>
         </div>
     </header>
@@ -558,30 +492,12 @@
     </div>
 @else
     {{-- Guest layout (login page) --}}
-    <main class="container py-4">
-        @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        @endif
-        @if(session('error'))
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                {{ session('error') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        @endif
+    <main>
         @yield('content')
     </main>
 @endauth
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    function toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('show');
-        document.getElementById('sidebarOverlay').classList.toggle('show');
-    }
-</script>
 @stack('scripts')
 </body>
 </html>

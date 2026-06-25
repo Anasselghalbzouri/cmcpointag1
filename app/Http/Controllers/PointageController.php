@@ -8,18 +8,6 @@ use Illuminate\Support\Facades\Auth;
 
 class PointageController extends Controller
 {
-    public function kiosk()
-    {
-        $recent_movements = DB::table('mouvements')
-            ->join('etudiants', 'mouvements.etudiant_id', '=', 'etudiants.id')
-            ->select('mouvements.*', 'etudiants.nom as etudiant_nom', 'etudiants.prenom as etudiant_prenom')
-            ->orderByDesc('mouvements.date_heure')
-            ->limit(5)
-            ->get();
-
-        return view('kiosk.index', compact('recent_movements'));
-    }
-
     public function index()
     {
         $recent_movements = DB::table('mouvements')
@@ -66,12 +54,11 @@ class PointageController extends Controller
             $newType = 'sortie';
         }
 
-        // Get first pavillon as default
-        $pavillon = DB::table('pavillons')->first();
+        $pavillonId = $this->resolvePavillonId($student);
 
         DB::table('mouvements')->insert([
             'etudiant_id' => $student->id,
-            'pavillon_id' => $pavillon->id ?? 1,
+            'pavillon_id' => $pavillonId,
             'type' => $newType,
             'date_heure' => now(),
             'enregistre_par' => Auth::id(),
@@ -84,43 +71,6 @@ class PointageController extends Controller
             : "👋 {$student->prenom} {$student->nom} est sorti(e).";
 
         return back()->with('success', $message);
-    }
-
-    public function kioskScan(Request $request)
-    {
-        $request->validate([
-            'cne' => 'required|string',
-            'movement_type' => 'required|in:entree,sortie',
-        ]);
-
-        $student = DB::table('etudiants')
-            ->where('cin', $request->cne)
-            ->whereNull('deleted_at')
-            ->first();
-
-        if (!$student) {
-            return back()->with('error', 'Étudiant non trouvé avec ce CIN.');
-        }
-
-        $pavillon = DB::table('pavillons')->first();
-
-        DB::table('mouvements')->insert([
-            'etudiant_id' => $student->id,
-            'pavillon_id' => $pavillon->id ?? 1,
-            'type' => $request->movement_type,
-            'date_heure' => now(),
-            'enregistre_par' => 1,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        return back()
-            ->with('success', $request->movement_type === 'entree'
-                ? "{$student->prenom} {$student->nom} marqué ENTRÉE."
-                : "{$student->prenom} {$student->nom} marqué SORTIE.")
-            ->with('movement_type', $request->movement_type)
-            ->with('movement_student', "{$student->prenom} {$student->nom}")
-            ->with('movement_time', now()->timezone('Africa/Casablanca')->format('d/m/Y H:i:s'));
     }
 
     public function manualEntry(Request $request)
@@ -139,11 +89,11 @@ class PointageController extends Controller
             return back()->with('error', 'Étudiant non trouvé.');
         }
 
-        $pavillon = DB::table('pavillons')->first();
+        $pavillonId = $this->resolvePavillonId($student);
 
         DB::table('mouvements')->insert([
             'etudiant_id' => $student->id,
-            'pavillon_id' => $pavillon->id ?? 1,
+            'pavillon_id' => $pavillonId,
             'type' => $request->type,
             'date_heure' => now(),
             'enregistre_par' => Auth::id(),
@@ -152,5 +102,20 @@ class PointageController extends Controller
         ]);
 
         return back()->with('success', 'Mouvement enregistré manuellement.');
+    }
+
+    private function resolvePavillonId(object $student): int
+    {
+        if ($student->chambre_id) {
+            $pavillonId = DB::table('chambres')
+                ->where('id', $student->chambre_id)
+                ->value('pavillon_id');
+
+            if ($pavillonId) {
+                return $pavillonId;
+            }
+        }
+
+        return DB::table('pavillons')->orderBy('id')->value('id') ?? 1;
     }
 }

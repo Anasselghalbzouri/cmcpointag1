@@ -104,7 +104,7 @@
         <div class="card-header border-0 bg-white d-flex justify-content-between align-items-center px-4 pt-3 pb-0">
             <div>
                 <div class="section-title">Historique des mouvements</div>
-                <div class="section-subtitle">{{ count($mouvements) }} résultat(s)</div>
+                <div class="section-subtitle">{{ $mouvements->total() }} résultat(s)</div>
             </div>
         </div>
         <div class="card-body p-0 pt-2">
@@ -174,6 +174,11 @@
                     </tbody>
                 </table>
             </div>
+            @if($mouvements->hasPages())
+                <div class="px-4 py-3">
+                    {{ $mouvements->links('pagination::bootstrap-5') }}
+                </div>
+            @endif
         </div>
     </div>
 </div>

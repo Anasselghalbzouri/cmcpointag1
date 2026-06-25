@@ -23,3 +23,12 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+bash.exe.stackdump
+
+# Screenshots / capture exports (not part of the app)
+/screenshots/
+*.png
+*.webp
+!public/images/**/*.png
+!public/images/**/*.webp
+!resources/**/*.png

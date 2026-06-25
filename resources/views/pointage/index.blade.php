@@ -11,13 +11,25 @@
         * { box-sizing: border-box; }
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            position: relative;
+            background: #0c2226 url('{{ asset('images/cmc-tta.png') }}') center center / cover no-repeat;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 1.5rem;
             -webkit-font-smoothing: antialiased;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(8,30,33,.88) 0%, rgba(15,60,65,.82) 100%);
+            z-index: 0;
+        }
+        .top-bar, .pointage-wrapper {
+            position: relative;
+            z-index: 1;
         }
 
         .pointage-wrapper {
@@ -30,13 +42,17 @@
             margin-bottom: 2rem;
         }
         .page-brand-icon {
-            width: 56px; height: 56px;
-            background: #3b82f6;
+            width: 64px; height: 64px;
+            background: #fff;
             border-radius: 1rem;
             display: inline-flex; align-items: center; justify-content: center;
-            font-size: 1.4rem; color: #fff; font-weight: 800;
-            box-shadow: 0 8px 24px rgba(59,130,246,.4);
+            padding: .5rem;
+            box-shadow: 0 8px 24px rgba(0,0,0,.3);
             margin-bottom: .75rem;
+        }
+        .page-brand-icon img {
+            width: 100%; height: 100%;
+            object-fit: contain;
         }
         .page-brand-title {
             color: #fff;
@@ -101,8 +117,8 @@
         .form-control::placeholder { color: #475569; }
         .form-control:focus, .form-select:focus {
             background: rgba(255,255,255,.1);
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59,130,246,.2);
+            border-color: #2bb3bf;
+            box-shadow: 0 0 0 3px rgba(43,179,191,.25);
             color: #fff;
         }
         .form-select option { background: #1e293b; color: #fff; }
@@ -125,7 +141,7 @@
 
         /* Buttons */
         .btn-scan {
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            background: linear-gradient(135deg, #2bb3bf, #1d8a96);
             border: none;
             border-radius: .875rem;
             color: #fff;
@@ -134,10 +150,10 @@
             height: 52px;
             width: 100%;
             display: flex; align-items: center; justify-content: center; gap: .6rem;
-            box-shadow: 0 4px 16px rgba(59,130,246,.35);
+            box-shadow: 0 4px 16px rgba(43,179,191,.4);
             transition: all .2s;
         }
-        .btn-scan:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(59,130,246,.45); color: #fff; }
+        .btn-scan:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(43,179,191,.5); color: #fff; }
 
         .btn-manual {
             background: rgba(255,255,255,.08);
@@ -251,7 +267,7 @@
 
     {{-- Brand --}}
     <div class="page-brand">
-        <div class="page-brand-icon">CP</div>
+        <div class="page-brand-icon"><img src="{{ asset('images/cmc-logo.png') }}" alt="CMC"></div>
         <div class="page-brand-title">CMC Pointage</div>
         <div class="page-brand-sub">Enregistrement des mouvements</div>
     </div>

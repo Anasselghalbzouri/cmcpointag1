@@ -73,6 +73,19 @@
                             </div>
                         </div>
 
+                        <h6 class="text-muted text-uppercase mb-3" style="font-size:.7rem; font-weight:700; letter-spacing:.08em;">Formation</h6>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label for="duree_formation" class="form-label" style="font-size:.82rem; font-weight:600;">Durée de la formation *</label>
+                                <select class="form-select @error('duree_formation') is-invalid @enderror" id="duree_formation" name="duree_formation" required style="border-radius:.625rem;">
+                                    <option value="2_ans" {{ old('duree_formation', '2_ans') === '2_ans' ? 'selected' : '' }}>2 ans</option>
+                                    <option value="2_ans_demi" {{ old('duree_formation') === '2_ans_demi' ? 'selected' : '' }}>2 ans et demi</option>
+                                </select>
+                                @error('duree_formation') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            </div>
+                        </div>
+
                         <h6 class="text-muted text-uppercase mb-3" style="font-size:.7rem; font-weight:700; letter-spacing:.08em;">Hébergement</h6>
 
                         <div class="row g-3 mb-4">
@@ -81,12 +94,13 @@
                                 <select class="form-select @error('chambre_id') is-invalid @enderror" id="chambre_id" name="chambre_id" style="border-radius:.625rem;">
                                     <option value="">— Sans chambre —</option>
                                     @foreach($chambres as $c)
-                                        <option value="{{ $c->id }}" {{ old('chambre_id') == $c->id ? 'selected' : '' }}>
+                                        <option value="{{ $c->id }}" data-sexe="{{ $c->pavillon_nom === 'homme' ? 'M' : 'F' }}" {{ old('chambre_id') == $c->id ? 'selected' : '' }}>
                                             {{ $c->numero }} — Pav. {{ ucfirst($c->pavillon_nom) }}, Étg {{ $c->etage }} ({{ $c->occupants_actuels }}/{{ $c->capacite }})
                                         </option>
                                     @endforeach
                                 </select>
                                 @error('chambre_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                <div class="form-text" id="chambreHint" style="font-size:.75rem;">Sélectionnez le sexe pour filtrer les chambres disponibles.</div>
                             </div>
                         </div>
 
@@ -102,4 +116,27 @@
         </div>
     </div>
 </div>
+
+<script>
+    (function () {
+        var sexeSelect = document.getElementById('sexe');
+        var chambreSelect = document.getElementById('chambre_id');
+        var options = Array.from(chambreSelect.options);
+
+        function filterChambres() {
+            var sexe = sexeSelect.value;
+            options.forEach(function (opt) {
+                if (!opt.value) return;
+                var matches = !sexe || opt.dataset.sexe === sexe;
+                opt.hidden = !matches;
+                if (!matches && opt.selected) {
+                    chambreSelect.value = '';
+                }
+            });
+        }
+
+        sexeSelect.addEventListener('change', filterChambres);
+        filterChambres();
+    })();
+</script>
 @endsection

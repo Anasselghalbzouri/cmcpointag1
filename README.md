@@ -1,6 +1,6 @@
 # CMC Pointage
 
-Application Laravel de gestion de présence (scan CNE entrée/sortie), avec interface Bootstrap 5.
+Application Laravel de gestion de présence pour une cité universitaire (entrées/sorties des étudiants, affectation des chambres, demandes, sanctions, visites).
 
 ## Prérequis
 
@@ -9,15 +9,26 @@ Application Laravel de gestion de présence (scan CNE entrée/sortie), avec inte
 - Node.js + npm
 - MySQL 8+ (ou MariaDB compatible)
 
-## Configuration MySQL
+## Installation
 
-1. Créer la base de données :
-
-```sql
-CREATE DATABASE cmc_p CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```bash
+composer install
+npm install
+cp .env.example .env
+php artisan key:generate
 ```
 
-2. Vérifier `.env` :
+## Base de données
+
+Le schéma de production vient du dump **`CMCpointage.sql`**, pas des migrations Laravel
+(la migration ne définit qu'un schéma simplifié). Importer directement le dump :
+
+```bash
+mysql -u root -p -e "CREATE DATABASE cmc_p CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+mysql -u root -p cmc_p < CMCpointage.sql
+```
+
+Puis configurer `.env` :
 
 ```env
 DB_CONNECTION=mysql
@@ -28,40 +39,33 @@ DB_USERNAME=root
 DB_PASSWORD=
 ```
 
-3. Installer et initialiser :
-
-```bash
-composer install
-npm install
-php artisan key:generate
-php artisan migrate --force
-```
+⚠️ Ne pas exécuter `php artisan migrate` sur la base de production.
 
 ## Démarrage local
 
 ```bash
-composer run dev
+composer dev
 ```
 
-Cette commande lance :
-- serveur Laravel (`php artisan serve`)
-- worker queue (`php artisan queue:listen`)
-- logs (`php artisan pail`)
+Cette commande lance en parallèle :
+- le serveur Laravel (`php artisan serve`)
+- le worker de queue
+- les logs (`php artisan pail`)
 - Vite (`npm run dev`)
 
-## Initialiser des comptes de test
+Vérifier l'installation sur `/setup`.
 
-Ouvrir :
-
-`http://127.0.0.1:8000/setup`
-
-Comptes créés :
-- `admin / password`
-- `agent / password`
-- `CNE12345 / password`
+Compte admin par défaut : `admin@cmc.ma / password`
 
 ## Tests
 
 ```bash
-php artisan test
+composer test
+# ou : php artisan test
+```
+
+## Style de code
+
+```bash
+./vendor/bin/pint
 ```

@@ -6,6 +6,17 @@
 
 @section('content')
 <div>
+    {{-- Header Row --}}
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4 animate-in">
+        <div>
+            <h2 class="section-title mb-0">Gestion des demandes</h2>
+            <p class="section-subtitle mb-0">{{ $demandes->total() }} demande(s) trouvée(s)</p>
+        </div>
+        <a href="{{ route('demandes.create') }}" class="btn btn-primary d-flex align-items-center gap-2" style="border-radius:.625rem; font-weight:600; font-size:.85rem; padding:.55rem 1.25rem;">
+            <i class="bi bi-plus-lg"></i> Nouvelle demande
+        </a>
+    </div>
+
     {{-- KPI --}}
     <div class="row g-3 mb-4">
         <div class="col-6 col-xl-3">
@@ -137,6 +148,11 @@
                     </tbody>
                 </table>
             </div>
+            @if($demandes->hasPages())
+                <div class="px-4 py-3">
+                    {{ $demandes->links('pagination::bootstrap-5') }}
+                </div>
+            @endif
         </div>
     </div>
 </div>

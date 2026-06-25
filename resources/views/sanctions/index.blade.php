@@ -6,6 +6,17 @@
 
 @section('content')
 <div>
+    {{-- Header Row --}}
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4 animate-in">
+        <div>
+            <h2 class="section-title mb-0">Gestion des sanctions</h2>
+            <p class="section-subtitle mb-0">{{ $sanctions->total() }} sanction(s) trouvée(s)</p>
+        </div>
+        <a href="{{ route('sanctions.create') }}" class="btn btn-primary d-flex align-items-center gap-2" style="border-radius:.625rem; font-weight:600; font-size:.85rem; padding:.55rem 1.25rem;">
+            <i class="bi bi-plus-lg"></i> Émettre une sanction
+        </a>
+    </div>
+
     {{-- KPI --}}
     <div class="row g-3 mb-4">
         <div class="col-6 col-xl-3">
@@ -90,7 +101,7 @@
                             <th>Étudiant</th>
                             <th>Type</th>
                             <th>Motif</th>
-                            <th>Montant</th>
+                            <th>Durée</th>
                             <th>Statut</th>
                             <th class="text-end">Actions</th>
                         </tr>
@@ -122,8 +133,8 @@
                                 </td>
                                 <td style="font-size:.82rem; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ Str::limit($s->motif, 40) }}</td>
                                 <td>
-                                    @if($s->montant_amende)
-                                        <span class="fw-bold" style="color:#7c3aed;">{{ number_format($s->montant_amende, 0) }} DH</span>
+                                    @if($s->date_fin)
+                                        <span class="fw-bold" style="color:#7c3aed;">{{ \Carbon\Carbon::parse($s->date_sanction)->diffInDays(\Carbon\Carbon::parse($s->date_fin)) }} j</span>
                                     @else
                                         <span class="text-muted">—</span>
                                     @endif
@@ -156,6 +167,11 @@
                     </tbody>
                 </table>
             </div>
+            @if($sanctions->hasPages())
+                <div class="px-4 py-3">
+                    {{ $sanctions->links('pagination::bootstrap-5') }}
+                </div>
+            @endif
         </div>
     </div>
 </div>

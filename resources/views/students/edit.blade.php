@@ -81,6 +81,24 @@
                             </div>
                         </div>
 
+                        <h6 class="text-muted text-uppercase mb-3" style="font-size:.7rem; font-weight:700; letter-spacing:.08em;">Formation</h6>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label for="duree_formation" class="form-label" style="font-size:.82rem; font-weight:600;">Durée de la formation</label>
+                                <select class="form-select @error('duree_formation') is-invalid @enderror" id="duree_formation" name="duree_formation" required style="border-radius:.625rem;">
+                                    <option value="2_ans" {{ old('duree_formation', $student->duree_formation) === '2_ans' ? 'selected' : '' }}>2 ans</option>
+                                    <option value="2_ans_demi" {{ old('duree_formation', $student->duree_formation) === '2_ans_demi' ? 'selected' : '' }}>2 ans et demi</option>
+                                </select>
+                                @error('duree_formation') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" style="font-size:.82rem; font-weight:600;">Année d'étude</label>
+                                <div class="form-control" style="border-radius:.625rem; background:#f8fafc;">{{ $student->annee_etude }}<sup>{{ $student->annee_etude === '1' ? 'ère' : 'ème' }}</sup> année</div>
+                                <div class="text-muted" style="font-size:.7rem;">Mise à jour automatiquement (12 mois après l'entrée).</div>
+                            </div>
+                        </div>
+
                         <h6 class="text-muted text-uppercase mb-3" style="font-size:.7rem; font-weight:700; letter-spacing:.08em;">Hébergement & Statut</h6>
 
                         <div class="row g-3 mb-4">

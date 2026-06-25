@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Console\Scheduling\Schedule;
 use App\Http\Middleware\CheckRole;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -15,6 +16,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => CheckRole::class,
         ]);
+    })
+    ->withSchedule(function (Schedule $schedule) {
+        $schedule->command('students:process-academic-year')->daily();
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

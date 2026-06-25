@@ -10,11 +10,21 @@
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4 animate-in">
         <div>
             <h2 class="section-title mb-0">Gestion des étudiants</h2>
-            <p class="section-subtitle mb-0">{{ count($students) }} étudiant(s) trouvé(s)</p>
+            <p class="section-subtitle mb-0">{{ $students->total() }} étudiant(s) trouvé(s)</p>
         </div>
-        <a href="{{ route('students.create') }}" class="btn btn-primary d-flex align-items-center gap-2" style="border-radius:.625rem; font-weight:600; font-size:.85rem; padding:.55rem 1.25rem;">
-            <i class="bi bi-plus-lg"></i> Ajouter un étudiant
-        </a>
+        <div class="d-flex gap-2">
+            @if(auth()->user()->isAdmin())
+                <form method="POST" action="{{ route('students.processAcademicYear') }}" onsubmit="return confirm('Archiver les étudiants ayant terminé leur formation et promouvoir les étudiants de 1ère année éligibles ?');">
+                    @csrf
+                    <button type="submit" class="btn btn-outline-secondary d-flex align-items-center gap-2" style="border-radius:.625rem; font-weight:600; font-size:.85rem; padding:.55rem 1.25rem;">
+                        <i class="bi bi-arrow-repeat"></i> Traiter fins d'année
+                    </button>
+                </form>
+            @endif
+            <a href="{{ route('students.create') }}" class="btn btn-primary d-flex align-items-center gap-2" style="border-radius:.625rem; font-weight:600; font-size:.85rem; padding:.55rem 1.25rem;">
+                <i class="bi bi-plus-lg"></i> Ajouter un étudiant
+            </a>
+        </div>
     </div>
 
     {{-- Search & Filters --}}
@@ -75,6 +85,7 @@
                             <th>CIN</th>
                             <th>Contact</th>
                             <th>Chambre</th>
+                            <th>Année</th>
                             <th>Statut</th>
                             <th class="text-end">Actions</th>
                         </tr>
@@ -108,6 +119,9 @@
                                     @else
                                         <span class="text-muted" style="font-size:.78rem;">—</span>
                                     @endif
+                                </td>
+                                <td>
+                                    <span class="status-badge" style="background:#f1f5f9; color:#475569;">{{ $student->annee_etude }}<sup>{{ $student->annee_etude === '1' ? 'ère' : 'ème' }}</sup></span>
                                 </td>
                                 <td>
                                     @if($student->statut === 'actif')
@@ -148,7 +162,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center py-5">
+                                <td colspan="7" class="text-center py-5">
                                     <div class="text-muted">
                                         <i class="bi bi-search" style="font-size:2rem; display:block; margin-bottom:.5rem; opacity:.3;"></i>
                                         <div style="font-size:.9rem; font-weight:500;">Aucun étudiant trouvé</div>
@@ -160,6 +174,11 @@
                     </tbody>
                 </table>
             </div>
+            @if($students->hasPages())
+                <div class="px-4 py-3">
+                    {{ $students->links('pagination::bootstrap-5') }}
+                </div>
+            @endif
         </div>
     </div>
 </div>

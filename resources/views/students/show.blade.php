@@ -82,6 +82,20 @@
                         <span class="text-muted">Date entrée</span>
                         <strong>{{ \Carbon\Carbon::parse($student->date_entree)->format('d/m/Y') }}</strong>
                     </div>
+                    <div class="list-group-item d-flex justify-content-between py-2 px-4" style="font-size:.85rem;">
+                        <span class="text-muted">Durée formation</span>
+                        <strong>{{ $student->duree_formation === '2_ans_demi' ? '2 ans et demi' : '2 ans' }}</strong>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between py-2 px-4" style="font-size:.85rem;">
+                        <span class="text-muted">Année d'étude</span>
+                        <strong>{{ $student->annee_etude }}{{ $student->annee_etude === '1' ? 'ère' : 'ème' }} année</strong>
+                    </div>
+                    @if($student->date_sortie_prevue)
+                    <div class="list-group-item d-flex justify-content-between py-2 px-4" style="font-size:.85rem;">
+                        <span class="text-muted">Fin de formation prévue</span>
+                        <strong>{{ \Carbon\Carbon::parse($student->date_sortie_prevue)->format('d/m/Y') }}</strong>
+                    </div>
+                    @endif
                 </div>
             </div>
         </div>

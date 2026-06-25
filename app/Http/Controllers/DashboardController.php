@@ -55,6 +55,13 @@ class DashboardController extends Controller
         // Visites en cours
         $activeVisites = DB::table('visites')->where('statut', 'en_cours')->whereNull('deleted_at')->count();
 
+        // Étudiants dont la fin de formation est imminente (30 prochains jours)
+        $upcomingDepartures = DB::table('etudiants')
+            ->where('statut', 'actif')
+            ->whereNull('deleted_at')
+            ->whereBetween('date_sortie_prevue', [today()->toDateString(), today()->addDays(30)->toDateString()])
+            ->count();
+
         // Pavillon data
         $pavilions = DB::table('pavillons')->get()->map(function ($pav) {
             $chambresCount = DB::table('chambres')->where('pavillon_id', $pav->id)->whereNull('deleted_at')->count();
@@ -85,6 +92,7 @@ class DashboardController extends Controller
             'pending_demandes' => $pendingDemandes,
             'active_sanctions' => $activeSanctions,
             'active_visites' => $activeVisites,
+            'upcoming_departures' => $upcomingDepartures,
             'occupancy_rate' => $occupancyRate,
         ];
 
